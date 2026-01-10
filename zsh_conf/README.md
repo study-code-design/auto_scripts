@@ -6,5 +6,9 @@
 运行:
 ```bash
 chmod +x auto_install.sh
-./auto_install.sh 
+./auto_install.sh
 ```
+# 测试情况
+**经过测试，如果需要完全运行成功的话，需要执行这个脚本两次**
+然后会有一个引导配置选项，这个不是我写的，是zsh官方自带的。
+然后你需要手动运行`chsh -s $(which zsh)`,如果终端没有生效的话。当然运行后记得logout(注销或者重启)
