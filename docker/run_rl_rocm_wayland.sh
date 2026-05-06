@@ -22,31 +22,13 @@ DOCKER_DEVICES=(
     --device /dev/input
 )
 
-DOCKER_DISPLAY_ARGS=()
 WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 HOST_XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 HOST_WAYLAND_SOCKET="${HOST_XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}"
 
-if [[ -S "$HOST_WAYLAND_SOCKET" ]]; then
-    echo "Using Wayland display: $HOST_WAYLAND_SOCKET"
-    DOCKER_DISPLAY_ARGS=(
-        --user "$(id -u):$(id -g)"
-        -e HOME=/root
-        -e XDG_RUNTIME_DIR=/tmp
-        -e WAYLAND_DISPLAY="$WAYLAND_DISPLAY"
-        -v "$HOST_WAYLAND_SOCKET:/tmp/$WAYLAND_DISPLAY"
-    )
-elif [[ -n "${DISPLAY:-}" && -d /tmp/.X11-unix ]]; then
-    echo "Using X11 display: $DISPLAY"
-    DOCKER_DISPLAY_ARGS=(
-        -e HOME=/root
-        -e DISPLAY="$DISPLAY"
-        -v /tmp/.X11-unix:/tmp/.X11-unix:rw
-    )
-else
-    echo "No Wayland or X11 display socket found." >&2
-    echo "For Wayland, check XDG_RUNTIME_DIR and WAYLAND_DISPLAY." >&2
-    echo "For X11, check DISPLAY and /tmp/.X11-unix." >&2
+if [[ ! -S "$HOST_WAYLAND_SOCKET" ]]; then
+    echo "Wayland socket not found: $HOST_WAYLAND_SOCKET" >&2
+    echo "Set WAYLAND_DISPLAY and XDG_RUNTIME_DIR, then run this script from a Wayland session." >&2
     exit 1
 fi
 
@@ -54,11 +36,7 @@ if [[ -e /dev/ttyUSB0 ]]; then
     DOCKER_DEVICES+=(--device /dev/ttyUSB0)
 fi
 
-if docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-    echo "Image exists, skipping build: $IMAGE_NAME"
-else
-    docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile" "$SCRIPT_DIR"
-fi
+docker build -t "$IMAGE_NAME" -f "$SCRIPT_DIR/Dockerfile" "$SCRIPT_DIR"
 
 if docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
     docker start -ai "$CONTAINER_NAME"
@@ -70,7 +48,11 @@ docker run -it \
     "${DOCKER_DEVICES[@]}" \
     --group-add video \
     --security-opt seccomp=unconfined \
-    "${DOCKER_DISPLAY_ARGS[@]}" \
+    --user "$(id -u):$(id -g)" \
+    -e HOME=/root \
+    -e XDG_RUNTIME_DIR=/tmp \
+    -e WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
+    -v "$HOST_WAYLAND_SOCKET:/tmp/$WAYLAND_DISPLAY" \
     -v "$WORKSPACE":/root \
     -w /root \
     --shm-size=8g \
