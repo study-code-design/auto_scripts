@@ -12,6 +12,10 @@ ENV PATH=/root/.local/bin:${PATH}
 WORKDIR /root
 
 ARG UBUNTU_MIRROR=http://mirrors.aliyun.com/ubuntu
+ARG USERNAME=tu
+ARG UID=1000
+ARG GID=1000
+
 
 RUN printf '%s\n' \
         "deb ${UBUNTU_MIRROR}/ focal main restricted universe multiverse" \
@@ -19,6 +23,12 @@ RUN printf '%s\n' \
         "deb ${UBUNTU_MIRROR}/ focal-backports main restricted universe multiverse" \
         "deb ${UBUNTU_MIRROR}/ focal-security main restricted universe multiverse" \
     > /etc/apt/sources.list
+
+RUN groupadd -g "${GID}" "${USERNAME}" \
+    && useradd -m -u "${UID}" -g "${GID}" -s /usr/bin/bash "${USERNAME}" \
+    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -64,7 +74,6 @@ RUN set -eux; \
         echo "Skipping Hugging Face CLI installer: Python 3.10+ is required, base image provides $(python3 --version 2>&1)."; \
     fi
 
-RUN chsh -s /usr/bin/zsh    
 
 
 CMD ["bash"]
