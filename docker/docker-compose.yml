@@ -30,6 +30,7 @@ services:
       - VIRTUAL_ENV=
       - UV_PROJECT_ENVIRONMENT=${UV_PROJECT_ENVIRONMENT}
       - XAUTHORITY=${XAUTHORITY}
+      - HSA_OVERRIDE_GFX_VERSION=11.0.0
     
     # 🔥 所有挂载必须合并在同一个 volumes 块中！
     volumes:
