@@ -1,0 +1,47 @@
+# version: "3.8"
+
+services:
+  dev-interactive:
+    image: ${IMAGE_NAME}
+    container_name: ${CONTAINER_NAME}
+    
+    stdin_open: true
+    tty: true
+    
+    # 🔥 设备直接写死（ROCm 开发机基本都有，避免动态生成导致 YAML 崩溃）
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+      - /dev/input:/dev/input
+      # - /dev/ttyUSB0:/dev/ttyUSB0  # 按需取消注释
+
+    group_add:
+      - video
+      - render
+    security_opt:
+      - seccomp=unconfined
+    
+    environment:
+      - HOME=${CONTAINER_HOME}
+      - PATH=${CONTAINER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - DISPLAY=${DISPLAY}
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
+      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
+      - VIRTUAL_ENV=
+      - UV_PROJECT_ENVIRONMENT=${UV_PROJECT_ENVIRONMENT}
+      - XAUTHORITY=${XAUTHORITY}
+    
+    # 🔥 所有挂载必须合并在同一个 volumes 块中！
+    volumes:
+      - ${XDG_RUNTIME_DIR}:${XDG_RUNTIME_DIR}:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY}:${XAUTHORITY}:ro
+      - ${WORKSPACE}:${CONTAINER_WORKSPACE}
+      - /usr/lib/firmware/amdgpu:/lib/firmware/amdgpu:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro  # ✅ 已合并进来
+    
+    working_dir: ${CONTAINER_WORKSPACE}
+    shm_size: 8g
+    network_mode: host
+    
+    command: ["bash", "/entrypoint.sh","chsh /usr/bin/zsh"] 
