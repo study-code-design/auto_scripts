@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_NAME="${1:-${IMAGE_NAME:-rocm6.3.4ub20-test:latest}}"
-CONTAINER_NAME="${2:-${CONTAINER_NAME:-rocm6.3.4ub20}}"
+IMAGE_NAME="${1:-${IMAGE_NAME:-rocm6.3.4ub20:root}}"
+CONTAINER_NAME="${2:-${CONTAINER_NAME:-rocm6.3.4ub20_norm_test2}}"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE="${WORKSPACE:-/home/tu/Documents/cpp_project/rl_rocm}"
-CONTAINER_WORKSPACE="${CONTAINER_WORKSPACE:-/root}"
+CONTAINER_WORKSPACE="${CONTAINER_WORKSPACE:-/workspace}"
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"
-CONTAINER_HOME="${CONTAINER_HOME:-${CONTAINER_WORKSPACE}/.container-home}"
-UV_PROJECT_ENVIRONMENT="${UV_PROJECT_ENVIRONMENT:-.venv-docker}"
+# CONTAINER_HOME="${CONTAINER_HOME:-${CONTAINER_WORKSPACE}/.container-home}"
+CONTAINER_HOME="${CONTAINER_HOME:-${CONTAINER_WORKSPACE}}"
+
+UV_PROJECT_ENVIRONMENT="${UV_PROJECT_ENVIRONMENT:-.venv}"
 
 if [[ "$IMAGE_NAME" == "-h" || "$IMAGE_NAME" == "--help" ]]; then
     echo "Usage: $0 [image_name[:tag]] [container_name]"
@@ -39,11 +41,12 @@ if docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
     docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 fi
 
-docker run -it \
+    # --user "${HOST_UID}:${HOST_GID}" \
+docker run -it  --rm \
     --name "$CONTAINER_NAME" \
-    --user "${HOST_UID}:${HOST_GID}" \
     "${DOCKER_DEVICES[@]}" \
     --group-add video \
+    --group-add render \
     --security-opt seccomp=unconfined \
     -e HOME="${CONTAINER_HOME}" \
     -e PATH="${CONTAINER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
@@ -54,15 +57,19 @@ docker run -it \
     -e UV_PROJECT_ENVIRONMENT="${UV_PROJECT_ENVIRONMENT}" \
     -v "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}:${XDG_RUNTIME_DIR:-/run/user/$(id -u)}:rw" \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    -v /etc/passwd:/etc/passwd:ro \
-    -v /etc/group:/etc/group:ro \
+    -e XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}" \
+    -v "${XAUTHORITY:-$HOME/.Xauthority}:${XAUTHORITY:-$HOME/.Xauthority}:ro" \
     -v "$WORKSPACE":"$CONTAINER_WORKSPACE" \
+    -e XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/1000}" \
+    -v "${XDG_RUNTIME_DIR:-/run/user/1000}:${XDG_RUNTIME_DIR:-/run/user/1000}:rw" \
     -w "$CONTAINER_WORKSPACE" \
+    -v /usr/lib/firmware/amdgpu:/lib/firmware/amdgpu:ro \
     --shm-size=8g \
     --network host \
     "$IMAGE_NAME" \
     bash -c '
-        set -e
+        set +e
+
         mkdir -p "$HOME/.local/bin"
         if [ ! -x "$HOME/.local/bin/uv" ]; then
             curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$HOME/.local/bin" sh

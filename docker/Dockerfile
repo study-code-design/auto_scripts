@@ -12,9 +12,9 @@ ENV PATH=/root/.local/bin:${PATH}
 WORKDIR /root
 
 ARG UBUNTU_MIRROR=http://mirrors.aliyun.com/ubuntu
-ARG USERNAME=tu
-ARG UID=1000
-ARG GID=1000
+# ARG USERNAME=tu
+# ARG UID=1000
+# ARG GID=1000
 
 
 RUN printf '%s\n' \
@@ -24,9 +24,9 @@ RUN printf '%s\n' \
         "deb ${UBUNTU_MIRROR}/ focal-security main restricted universe multiverse" \
     > /etc/apt/sources.list
 
-RUN groupadd -g "${GID}" "${USERNAME}" \
-    && useradd -m -u "${UID}" -g "${GID}" -s /usr/bin/bash "${USERNAME}" \
-    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# RUN groupadd -g "${GID}" "${USERNAME}" \
+#     && useradd -m -u "${UID}" -g "${GID}" -s /usr/bin/bash "${USERNAME}" \
+#     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 
 
