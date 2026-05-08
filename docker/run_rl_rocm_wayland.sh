@@ -48,10 +48,14 @@ docker run -it \
     "${DOCKER_DEVICES[@]}" \
     --group-add video \
     --security-opt seccomp=unconfined \
-    --user "$(id -u):$(id -g)" \
     -e HOME=/root \
     -e XDG_RUNTIME_DIR=/tmp \
     -e WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
+    -e PYGLFW_LIBRARY_VARIANT=wayland \
+    -e GLFW_PLATFORM=wayland \
+    -e QT_QPA_PLATFORM=wayland \
+    -e SDL_VIDEODRIVER=wayland \
+    -e GDK_BACKEND=wayland \
     -v "$HOST_WAYLAND_SOCKET:/tmp/$WAYLAND_DISPLAY" \
     -v "$WORKSPACE":/root \
     -w /root \

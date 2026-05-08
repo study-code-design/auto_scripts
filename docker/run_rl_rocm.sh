@@ -30,10 +30,14 @@ HOST_WAYLAND_SOCKET="${HOST_XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}"
 if [[ -S "$HOST_WAYLAND_SOCKET" ]]; then
     echo "Using Wayland display: $HOST_WAYLAND_SOCKET"
     DOCKER_DISPLAY_ARGS=(
-        --user "$(id -u):$(id -g)"
         -e HOME=/root
         -e XDG_RUNTIME_DIR=/tmp
         -e WAYLAND_DISPLAY="$WAYLAND_DISPLAY"
+        -e PYGLFW_LIBRARY_VARIANT=wayland
+        -e GLFW_PLATFORM=wayland
+        -e QT_QPA_PLATFORM=wayland
+        -e SDL_VIDEODRIVER=wayland
+        -e GDK_BACKEND=wayland
         -v "$HOST_WAYLAND_SOCKET:/tmp/$WAYLAND_DISPLAY"
     )
 elif [[ -n "${DISPLAY:-}" && -d /tmp/.X11-unix ]]; then
