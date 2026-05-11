@@ -1,0 +1,1 @@
+/home/tu/.config/minhypr/window-switcher-hold.sh
