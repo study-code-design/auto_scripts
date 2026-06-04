@@ -13,7 +13,8 @@ echo "root:root" | chpasswd
 
 service ssh start || true
 
-exec "$@"
+# =============================================
+
 
 
 
@@ -50,4 +51,11 @@ fi
 printf "uid=%s gid=%s DISPLAY=%s WAYLAND_DISPLAY=%s HOME=%s\n" \
   "$(id -u)" "$(id -g)" "${DISPLAY:-<empty>}" "${WAYLAND_DISPLAY:-<empty>}" "$HOME"
 
-exec bash
+
+
+
+if [ "$#" -eq 0 ]; then
+    exec zsh
+else
+    exec "$@"
+fi
