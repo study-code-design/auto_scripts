@@ -2,6 +2,21 @@
 # entrypoint.sh - 容器启动时执行
 set +e
 
+# ==========================================
+# 🔥 自动配置 SSH (每次容器启动时自动执行)
+# ==========================================
+
+sed -i -E 's/^#?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i -E 's/^#?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+# 右边root为密码
+echo "root:root" | chpasswd
+
+service ssh start || true
+
+exec "$@"
+
+
+
 mkdir -p "$HOME/.local/bin"
 
 # 安装 uv

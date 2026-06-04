@@ -8,7 +8,10 @@ services:
     stdin_open: true
     tty: true
     
-    # 🔥 设备直接写死（ROCm 开发机基本都有，避免动态生成导致 YAML 崩溃）
+    ports:
+     - "127.0.0.1:8080:80"
+     - "127.0.0.1:2222:22" 
+# 🔥 设备直接写死（ROCm 开发机基本都有，避免动态生成导致 YAML 崩溃）
     devices:
       - /dev/kfd:/dev/kfd
       - /dev/dri:/dev/dri

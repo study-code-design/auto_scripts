@@ -1,5 +1,5 @@
-# FROM rocm/dev-ubuntu-20.04:6.3.4-complete
-FROM rocm6-3-4_ubuntu20:latest
+#FROM rocm/dev-ubuntu-20.04:6.3.4-complete
+FROM rocm6.3.4ub20:root
 
 ENV TZ=Asia/Shanghai
 ENV HOME=/root
@@ -61,6 +61,8 @@ RUN apt-get update \
         libglx-mesa0 \
         mesa-utils \
         mesa-vulkan-drivers \
+        openssh-server \
+        iproute2 \
     && locale-gen en_US.UTF-8 zh_CN.UTF-8 \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
