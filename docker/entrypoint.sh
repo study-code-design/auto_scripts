@@ -54,8 +54,9 @@ printf "uid=%s gid=%s DISPLAY=%s WAYLAND_DISPLAY=%s HOME=%s\n" \
 
 
 
-if [ "$#" -eq 0 ]; then
-    exec zsh
-else
-    exec "$@"
-fi
+# if [ "$#" -eq 0 ]; then
+#     exec zsh
+# else
+#     exec "$@"
+# fi
+exec zsh
