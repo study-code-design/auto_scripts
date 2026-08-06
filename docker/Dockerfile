@@ -67,6 +67,14 @@ RUN apt-get update \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
+
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - 
+RUN curl -fsSL https://github.com/SaladDay/cc-switch-cli/releases/latest/download/install.sh | bash 
+RUN sudo apt-get install -y nodejs && npm install -g @openai/codex
+
+
+
+
 RUN set -eux; \
     echo "Skipping oh-my-zsh install during image build."; \
     echo "Skipping git-xet install on Ubuntu 20.04: current installer requires newer OpenSSL/libssl.so.3."; \

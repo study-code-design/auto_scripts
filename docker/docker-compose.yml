@@ -11,6 +11,7 @@ services:
     ports:
      - "127.0.0.1:8080:80"
      - "127.0.0.1:2222:22" 
+     - "15722:15722"
 # 🔥 设备直接写死（ROCm 开发机基本都有，避免动态生成导致 YAML 崩溃）
     devices:
       - /dev/kfd:/dev/kfd
@@ -29,17 +30,15 @@ services:
       - PATH=${CONTAINER_HOME}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
       - DISPLAY=${DISPLAY}
       - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
-      - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
-      - VIRTUAL_ENV=
+      - XAUTHORITY=/root/.Xauthority 
       - UV_PROJECT_ENVIRONMENT=${UV_PROJECT_ENVIRONMENT}
       - XAUTHORITY=${XAUTHORITY}
       - HSA_OVERRIDE_GFX_VERSION=11.0.0
     
     # 🔥 所有挂载必须合并在同一个 volumes 块中！
     volumes:
-      - ${XDG_RUNTIME_DIR}:${XDG_RUNTIME_DIR}:rw
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${XAUTHORITY}:${XAUTHORITY}:ro
+      - ~/.Xauthority:/root/.Xauthority:ro 
       - ${WORKSPACE}:${CONTAINER_WORKSPACE}
       - /usr/lib/firmware/amdgpu:/lib/firmware/amdgpu:ro
       - ./entrypoint.sh:/entrypoint.sh:ro  # ✅ 已合并进来
@@ -48,4 +47,4 @@ services:
     shm_size: 8g
     network_mode: host
     
-    command: ["bash", "/entrypoint.sh","chsh /usr/bin/zsh"] 
+    command: ["zsh", "/entrypoint.sh","chsh /usr/bin/zsh"] 
