@@ -126,4 +126,4 @@ rocm
 
 ani-5.4.3-linux-x86_64.appimage
 
-
+还有KDE配置
