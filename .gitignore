@@ -2,3 +2,4 @@
 .obsidian
 **/.venv/
 **/*test*
+**/*.swp
