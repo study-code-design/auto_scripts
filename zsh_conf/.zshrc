@@ -120,3 +120,12 @@ source $ZSH/oh-my-zsh.sh
 bindkey '^H' backward-kill-word
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+
+source /opt/ros/humble/setup.zsh
+
+export PATH=/home/ros/tools/python-tools/mujuco_tool/mujoco-3.11.0/bin:$PATH
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ros/tools/python-tools/mujuco_tool/mujoco-3.11.0/bin
+
+export PATH="/home/ros/.nvm/versions/node/v24.19.0/bin:$PATH"   
+
