@@ -1,0 +1,71 @@
+services:
+  dev-interactive:
+    image: ${IMAGE_NAME}
+    container_name: ${CONTAINER_NAME:-ub22_ros2}
+
+    stdin_open: true
+
+    tty: true
+
+    # 使用 host 网络时 ports 会被忽略,保留以备切换 bridge 网络
+    ports:
+      - "127.0.0.1:8080:80"
+
+    # security_opt:
+    #   - seccomp=unconfined
+    devices:
+      - /dev/dri:/dev/dri        # AMD/Intel GPU 硬件渲染(amdgpu/radeonsi/RADV)
+      - /dev/ttyUSB0:/dev/ttyUSB0  # 按需取消注释
+
+    environment:
+      # ---- X11 / XWayland(老程序弹窗走这条路) ----
+      # 不需要 XAUTHORITY:宿主机执行 xhost +local: 后本地连接免授权
+      - DISPLAY=${DISPLAY:-:0}
+      # ---- Wayland(zenity 等原生弹窗走这条路) ----
+      # 关键:XDG_RUNTIME_DIR 指向挂载进来的宿主目录,socket 才能被读到
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
+      - XDG_RUNTIME_DIR=/run/user/${UID:-1000}
+      # 桌面通知(notify-send)需要宿主的 DBus 会话总线
+      - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/${UID:-1000}/bus
+      # GTK/Qt 优先用 Wayland 后端,不行回退 X11
+      - GDK_BACKEND=wayland,x11
+      - QT_QPA_PLATFORM=wayland;xcb
+
+    volumes:
+      # X11 套接字(走 XWayland 的老程序)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Wayland socket + DBus bus 都在这里,整个挂进去
+      # 注意:/run/user/<UID> 权限是 0700,要求容器内 dev 用户 UID 与宿主机一致
+      - /run/user/${UID:-1000}:/run/user/${UID:-1000}:rw
+      # 项目目录 ros2 直接作为整个 home(镜像内已无 home 数据,首次已从备份镜像复制过来)
+      - $HOME/Documents/project/ros2:/home/${USERNAME:-dev}
+
+      - $HOME/Documents/project/bipedal:/home/${USERNAME:-dev}/bipedal
+
+      # # vscode-server 持久化:删容器重建也不用重新下载
+      # - $HOME/.vscode-server-ub22:/home/${USERNAME:-dev}/.vscode-server
+
+      # # opencode 持久化(历史对话/API 密钥/模型选择都存在这里)
+      # - $HOME/.opencode-ub22/config:/home/${USERNAME:-dev}/.config/opencode
+      # - $HOME/.opencode-ub22/share:/home/${USERNAME:-dev}/.local/share/opencode
+      # - $HOME/.opencode-ub22/cache:/home/${USERNAME:-dev}/.cache/opencode
+
+      # platformIO
+      # 可共享(两边都是 linux-x64):packages(ESP32 工具链/框架)、platforms(平台定义)、appstate.json 等
+      # 不可共享:penv(Python 虚拟环境,绑定创建时的解释器版本与绝对路径;
+      #           宿主机 3.14+/home/fiz 与容器 3.10//home/ros 互不兼容,谁重建都会搞坏另一边)
+      - $HOME/.platformio:/home/${USERNAME:-dev}/.platformio
+      # 容器的 penv 隔离到独立命名卷,宿主机与容器各自维护自己的虚拟环境,互不干扰
+      - pio_penv:/home/${USERNAME:-dev}/.platformio/penv
+
+
+      # zsh 配置以宿主机为准,容器内修改/删除容器都不丢
+      - ../../zsh_conf/.zshrc:/home/${USERNAME:-dev}/.zshrc:rw
+      - ../../zsh_conf/.p10k.zsh:/home/${USERNAME:-dev}/.p10k.zsh:rw
+      
+    network_mode: host
+    command: ["zsh"]
+
+volumes:
+  # 容器专用的 PlatformIO 虚拟环境(不影响宿主机 ~/.platformio/penv)
+  pio_penv:

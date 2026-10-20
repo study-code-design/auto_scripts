@@ -1,0 +1,11 @@
+FROM ub22-ros:humble
+ARG USERNAME=ros
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-venv \
+                                                ros-humble-xacro\
+    && locale-gen en_US.UTF-8   && rm -rf /var/lib/apt/lists/*
+RUN npm i @volcengine/ark-cli@latest -g
+
+USER ${USERNAME}
+
