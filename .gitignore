@@ -3,3 +3,4 @@
 **/.venv/
 **/*test*
 **/*.swp
+docker/ros2-root/home/

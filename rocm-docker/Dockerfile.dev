@@ -1,0 +1,26 @@
+FROM  rocm6-4_ub22:latest     
+
+USER root
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# RUN apt-get update \
+#     && apt-get install -y --no-install-recommends \
+#         btop \
+#     && rm -rf /var/lib/apt/lists/*
+RUN apt update \
+    && apt install -y --no-install-recommends \
+        btop \
+        fzf \
+    && rm -rf /var/lib/apt/lists/*
+
+USER rocmUser
+# RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# RUN curl -fsSL https://opencode.ai/install | bash
+
+# zoxide
+RUN curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
+RUN sudo apt update
+# RUN cd ~/.local/bin && curl https://getmic.ro | bash 
+

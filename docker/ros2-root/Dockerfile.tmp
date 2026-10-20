@@ -1,0 +1,25 @@
+# 基于现有 ub22-ros:humble(已含 ROS2/zsh/node/opencode/colcon),秒级重建,不重装任何系统组件。
+#
+# 目的:把 /home/ros 里的用户数据(opencode 历史、platformio、vscode-server、zsh 配置等)
+# 直接烤进镜像。容器经常删除重建也不丢数据,不依赖宿主机挂载。
+#
+# 构建(上下文 = 本目录):
+#   docker build -t ub22-ros:home .
+#
+# 运行(项目实时挂载到 home 子目录,避免盖住整个 home):
+#   docker run -it -v $HOME/Documents/project/ros2:/home/ros/ros2 ub22-ros:home
+
+FROM ub22-ros:humble
+
+USER root
+
+# 把导出的 home 数据复制进镜像(属主改为 ros)
+COPY home/ /home/ros/
+
+RUN rm -rf /home/ros/.zcompdump* \
+    && chown -R ros:ros /home/ros
+
+USER ros
+WORKDIR /home/ros
+
+CMD ["zsh"]

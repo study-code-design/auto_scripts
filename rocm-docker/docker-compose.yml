@@ -1,0 +1,55 @@
+services:
+  rocm-dev:
+    build:
+      context: ..
+      dockerfile: rocm-docker/Dockerfile.dev
+      network: host
+      args:
+        HTTP_PROXY: http://127.0.0.1:7890
+        HTTPS_PROXY: http://127.0.0.1:7890
+    image: ${IMAGE_NAME:-rocm6.4.4ub22:dev}
+    container_name: ${CONTAINER_NAME:-rocm_dev}
+
+    stdin_open: true
+    tty: true
+
+    ports:
+      - "127.0.0.1:2233:2233"
+      - "15722:15722"
+
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+      - /dev/input:/dev/input
+
+    group_add:
+      - video
+      - render
+    security_opt:
+      - seccomp=unconfined
+
+    environment:
+      - HOME=${CONTAINER_HOME:-/home/rocmUser}
+      - PATH=${CONTAINER_HOME:-/home/rocmUser}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - DISPLAY=${DISPLAY:-}
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
+      - XDG_RUNTIME_DIR=/run/user/1000
+      - LANG=en_US.UTF-8
+      - LC_ALL=en_US.UTF-8
+
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:rw
+      - ${WORKSPACE}:/home/rocmUser/ros2
+      - rocm-home:/home/rocmUser
+      - /usr/lib/firmware/amdgpu:/lib/firmware/amdgpu:ro
+
+    shm_size: 12g
+    network_mode: host
+
+    user: ${UID:-1000}:${GID:-1000}
+
+    command: ["zsh"]
+
+volumes:
+  rocm-home:
