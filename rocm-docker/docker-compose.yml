@@ -47,6 +47,14 @@ services:
     shm_size: 12g
     network_mode: host
 
+    # ---- 内存护栏（2026-11 加）----
+    # 没有上限时，容器内任何进程都能吃光整机 31G RAM + 31G zram swap，
+    # 触发 systemd-oomd 的 SwapUsedLimit=90% 规则，一次杀掉整个 cgroup 的
+    # 1 万多个进程（表现为 exit 137 但 OOMKilled=false）。
+    # memswap_limit == mem_limit 表示容器完全不给 swap，避免把整机 swap 顶满。
+    mem_limit: 24g
+    memswap_limit: 24g
+
     user: ${UID:-1000}:${GID:-1000}
 
     command: ["zsh"]
