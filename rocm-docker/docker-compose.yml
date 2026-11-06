@@ -39,7 +39,10 @@ services:
 
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:rw
+      # 整目录挂载。只挂单个 wayland socket 时，容器内 /run/user/1000 是 root:root
+      # 0755，uid 1000 写不进去 → VS Code 创建 vscode-ipc-*.sock 报 EACCES
+      # → Agent Host 五次重启后放弃、无限重试。
+      - ${XDG_RUNTIME_DIR:-/run/user/1000}:/run/user/1000:rw
       - ${WORKSPACE}:/home/rocmUser/ros2
       - rocm-home:/home/rocmUser
       - /usr/lib/firmware/amdgpu:/lib/firmware/amdgpu:ro

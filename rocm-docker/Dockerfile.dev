@@ -19,8 +19,11 @@ USER rocmUser
 # RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 # RUN curl -fsSL https://opencode.ai/install | bash
 
-# zoxide
-RUN curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+# zoxide：已装在 volume 里（~/.local/bin/zoxide 0.9.4）。
+# 这层在运行时会被 rocm-home volume 完全遮蔽，装了也用不上；
+# 而且每次 build 都要去 github releases 下载，没开代理就必失败。
+# 需要时取消注释即可。
+# RUN curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 
 RUN sudo apt update
 # RUN cd ~/.local/bin && curl https://getmic.ro | bash 
