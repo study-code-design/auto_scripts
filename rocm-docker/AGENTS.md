@@ -23,6 +23,32 @@
 
 ---
 
+## 0.5 换机器 / 多机同步后必检清单（已踩过两次坑）
+
+本目录的配置里有**机器相关项**：仓库是同一份，但每台机器的用户名/路径/socket 不一样。
+换机器、重装系统或拉完仓库后，**逐项检查，不存在就改成该机的真实值**：
+
+| # | 机器相关项 | 检查什么 | tu 机器（2026-11-11）的正确值 |
+|---|---|---|---|
+| 1 | `rocm-docker/.env` 的 `WORKSPACE` | **路径必须真实存在且非空**。不存在时 Docker 会静默创建一个空目录挂进去，容器里看不到任何文件，极易误判成别的问题 | `/home/tu/Documents/cpp_project/rl_rocm`（70G） |
+| 2 | 宿主 `~/.config/Code/User/settings.json` | `"remote.autoForwardPorts": false` + `"remote.restoreForwardedPorts": false` —— **不在仓库里**，每台机器要手动加；漏掉 = 主因复发 | 已加（2026-11-11 补） |
+| 3 | `rocm-docker/.env` 的 `WAYLAND_DISPLAY` | 宿主实际 socket 名：`ls /run/user/1000 \| grep wayland` | `wayland-1` |
+| 4 | `rocm-docker/.env` 的 `DISPLAY` | `echo $DISPLAY`（X11 环境才需要） | `:0` |
+| 5 | 文档里的绝对路径 | 本目录 docs / AGENTS.md 历史记录里写的 `/home/fiz/...` 是旧机器的路径，读文档时**自行替换成当前机器的 `$WORKSPACE`** | — |
+
+**验证命令（重建容器后跑一遍）**：
+
+```bash
+docker exec rocm_dev bash -lc 'ls /home/rocmUser/ros2 \| head -3; touch /home/rocmUser/ros2/_wtest && rm /home/rocmUser/ros2/_wtest && echo 可写✔'
+docker inspect rocm_dev --format 'Memory={{.HostConfig.Memory}}'   # 应为 25769803776 (24G)
+grep autoForwardPorts ~/.config/Code/User/settings.json            # 应为 false
+```
+
+> 2026-11-11 实录：tu 机器上 ①② 同时缺失 → 11-06 故障完整复发。
+> ① 导致容器共享目录是空壳，② 导致转发自激循环再次把内存吃爆。
+
+---
+
 ## 1. 文件地图
 
 ```
@@ -31,6 +57,7 @@ rocm-docker/
 ├── docker-compose.yml        ← 编排（内存上限、runtime 目录挂载、GPU/输入设备、host 网络）
 ├── Dockerfile / Dockerfile.dev
 ├── .env                      ← IMAGE_NAME / WORKSPACE / DISPLAY / WAYLAND_DISPLAY
+│                               （WORKSPACE 等是机器相关项，见 0.5 节）
 ├── CHANGELOG-2026-11.md      ← 本次改动清单
 ├── docs/
 │   ├── 01-症状与排查记录.md
@@ -45,14 +72,15 @@ rocm-docker/
     └── README.md
 ```
 
-日志（运行期产生，不在本目录）：
+日志（运行期产生，不在本目录，放在共享工作区里以便容器内也能读）：
 
 ```
-宿主机  /home/fiz/Documents/project/ros2/memwatch/rocm_hog.log      ← 容器内也可见
-        /home/fiz/Documents/project/ros2/memwatch/rocm_guard.log
+宿主机  $WORKSPACE/memwatch/rocm_hog.log      ← 即容器内 /home/rocmUser/ros2/memwatch/
+        $WORKSPACE/memwatch/rocm_guard.log
+        tu 机器 = /home/tu/Documents/cpp_project/rl_rocm/memwatch/
 ```
 
-> 放共享目录（`ros2`）是为了让容器内也能 `cat`，
+> 放共享目录（`$WORKSPACE`）是为了让容器内也能 `cat`，
 > **代码留在本目录**，脚本用 `LOGDIR` 环境变量指向共享目录。
 
 ---
@@ -60,7 +88,7 @@ rocm-docker/
 ## 2. 标准工作流（按顺序）
 
 ```bash
-cd ~/Documents/project/auto_scripts/rocm-docker
+cd ~/Documents/auto_scripts/rocm-docker
 
 # ① 改配置后重建镜像（注意：compose build 会被 buildx 拦）
 cd .. && docker build -f rocm-docker/Dockerfile.dev -t rocm6-4_ub22:latest . && cd rocm-docker
@@ -78,7 +106,7 @@ docker exec rocm_dev bash -lc 'touch /run/user/1000/_p && echo ipc-ok && rm -f /
 grep -E 'autoForwardPorts|restoreForwardedPorts' ~/.config/Code/User/settings.json
 
 # ⑤ 观察曲线（打开 VS Code 连容器后看）
-grep 'cur=' ~/Documents/project/ros2/memwatch/rocm_hog.log | tail -10
+grep 'cur=' $WORKSPACE/memwatch/rocm_hog.log | tail -10
 ```
 
 **健康基线**（两个 VS Code 窗口同时开）：`cur ≈ 4~5G`、`tasks ≈ 400~500`、
@@ -117,7 +145,7 @@ grep 'cur=' ~/Documents/project/ros2/memwatch/rocm_hog.log | tail -10
 ```bash
 # 正在涨？先看是不是同一症状（30 秒）
 CG=/sys/fs/cgroup/system.slice/docker-$(docker inspect -f '{{.Id}}' rocm_dev).scope
-cat $CG/pids.current; grep 'node -e' ~/Documents/project/ros2/memwatch/rocm_hog.log | tail -2
+cat $CG/pids.current; grep 'node -e' $WORKSPACE/memwatch/rocm_hog.log | tail -2
 
 # 是同一症状（tasks 四位数 + node -e 成百上千）
 grep -n 'autoForwardPorts' ~/.config/Code/User/settings.json   # 被改回 true 了？
